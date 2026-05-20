@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>@(ViewData["Title"] != null ? ViewData["Title"] + " · " : "")CARE BATTLE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="~/css/care.css" asp-append-version="true" />
+</head>
+<body>
+
+  <div class="scanlines"></div>
+
+  <!-- NAV -->
+    <div class="nav-links">
+        <a href="/" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">SCOREBOARD</a>
+        <a href="/Ranking" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Ranking" ? "active" : "")">SENSORS</a>
+        <a href="/Challenges" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Challenge" ? "active" : "")">CHALLENGES</a>
+
+        @if (ViewContext.RouteData.Values["controller"]?.ToString() == "Challenge")
+        {
+            <a href="/Challenges" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">AKTIV</a>
+            <a href="/Challenges/History" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "History" ? "active" : "")">HISTORY</a>
+            <a href="/Challenges/HallOfFame" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "HallOfFame" ? "active" : "")">HALL OF FAME</a>
+        }
+
+        @if (User.IsInRole("Admin"))
+        {
+            <a href="/Admin/Dashboard" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" ? "active" : "")" style="color:var(--gold)">⚙ ADMIN</a>
+        }
+    </div>
+
+  <!-- CONTENT -->
+  <main class="main">
+    @RenderBody()
+  </main>
+
+  <footer class="footer">
+    <span class="font-mono">ESP32 SENSOR NETWORK · CARE CLASSROOM BATTLE SYSTEM · @DateTime.Now.Year</span>
+  </footer>
+
+  <!-- SignalR -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+  <script src="~/js/care.js" asp-append-version="true"></script>
+  @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

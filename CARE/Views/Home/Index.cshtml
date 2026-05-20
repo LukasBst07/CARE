@@ -1,0 +1,102 @@
+@model IReadOnlyList<ClassroomLiveVm>
+@{
+    ViewData["Title"] = "LIVE BATTLE";
+    var leader = Model.FirstOrDefault(c => c.Online);
+    var online  = Model.Where(c => c.Online).ToList();
+    var offline = Model.Where(c => !c.Online).ToList();
+}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">LIVE <span class="accent-cyan">BATTLE</span></h1>
+    <p class="page-sub font-mono">ESP32 SENSOR NETWORK · @Model.Count CLASSES</p>
+  </div>
+</div>
+
+@* ── Winner banner ── *@
+@if (leader != null)
+{
+  <div class="winner-banner" style="--rank-color:@leader.RankColor" id="winnerBanner">
+    <div class="winner-glow-line"></div>
+    <div class="winner-inner">
+      <div class="winner-crown">
+        <span class="winner-crown-icon">👑</span>
+        <span class="winner-badge font-mono" style="color:@leader.RankColor; border-color:@(leader.RankColor)44">#1 LEADER</span>
+      </div>
+      <div class="winner-info">
+        <div class="winner-name font-display" style="color:@leader.RankColor" id="wName">@leader.Name</div>
+        <div class="winner-meta">
+          <span class="online-badge font-mono" id="wStatus">● LIVE</span>
+          <span class="rank-badge font-mono" style="color:@leader.RankColor" id="wRank">@leader.RankEmoji @leader.RankLabel</span>
+        </div>
+        <div class="winner-sensors font-mono" id="wSensors">
+          <span>🌫 <b id="wEco2">@leader.Eco2.ToString("F0")</b> ppm</span>
+          <span>🌡 <b id="wTemp">@leader.Temp.ToString("F1")</b>°C</span>
+          <span>💧 <b id="wHum">@leader.Humidity.ToString("F0")</b>%</span>
+          <span>🔊 <b id="wDb">@leader.Db.ToString("F0")</b> dB</span>
+          <span>💡 <b id="wLux">@leader.Lux.ToString("F0")</b> lux</span>
+        </div>
+      </div>
+      <div class="winner-score-wrap">
+        <div class="winner-score font-display" style="color:@leader.RankColor;text-shadow:0 0 40px @leader.RankColor" id="wScore">@leader.TotalScore</div>
+        <div class="font-mono text-dim">TOTAL SCORE</div>
+      </div>
+    </div>
+  </div>
+}
+
+@* ── Online classes ── *@
+@if (online.Any())
+{
+  <div class="section-divider">
+    <span class="dot-live"></span>
+    <span class="font-mono text-dim">ONLINE · @online.Count ACTIVE</span>
+    <div class="divider-line"></div>
+  </div>
+
+  <div class="battle-grid" id="battleGrid">
+    @foreach (var (cls, i) in online.Select((c,i)=>(c,i)))
+    {
+      @await Html.PartialAsync("_BattleCard", cls)
+    }
+  </div>
+}
+
+@* ── Offline ── *@
+@if (offline.Any())
+{
+  <div class="section-divider" style="margin-top:2.5rem">
+    <span class="dot-offline"></span>
+    <span class="font-mono text-dim">OFFLINE · @offline.Count DEVICES</span>
+    <div class="divider-line"></div>
+  </div>
+  <div class="battle-grid offline-grid">
+    @foreach (var cls in offline)
+    {
+      @await Html.PartialAsync("_BattleCard", cls)
+    }
+  </div>
+}
+
+@if (!Model.Any())
+{
+  <div class="empty-state">
+    <div class="empty-icon">📡</div>
+    <p class="font-display">WAITING FOR ESP32 DATA</p>
+    <p class="font-mono text-dim">Connect devices via MQTT to <code>care/sensors/CLASSNAME</code></p>
+  </div>
+}
+
+@section Scripts {
+<script>
+// SignalR ranking update → re-render battle grid
+careSignalR.on('RankingUpdate', function(classrooms) {
+  updateBattleGrid(classrooms);
+  updateWinnerBanner(classrooms);
+  updateLeaderboard(classrooms);
+  const lastUpEl = document.getElementById('lastUpdate');
+  if (lastUpEl) lastUpEl.textContent = new Date().toLocaleTimeString();
+});
+</script>
+}
+

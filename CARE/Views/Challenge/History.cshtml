@@ -1,0 +1,99 @@
+﻿@model List<CARE.ViewModels.ChallengeHistoryVm>
+@{
+    ViewData["Title"] = "Challenge History";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">HISTORY</h1>
+        <p class="page-sub font-mono">Vergangene Challenges · Gewinner · Rankings</p>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-state">
+        <div class="empty-icon">🏆</div>
+        <p class="font-display">NOCH KEINE ABGESCHLOSSENEN CHALLENGES</p>
+        <p class="font-mono text-dim">Challenges werden nach Ablauf automatisch hier gespeichert.</p>
+    </div>
+}
+else
+{
+    @foreach (var h in Model)
+    {
+        <div class="history-card" style="cursor:default;transform:none">
+            <div class="hc-left">
+                <div class="hc-metric font-mono text-dim">
+                    @MetricIcon(h.Challenge.Metric) @MetricLabel(h.Challenge.Metric)
+                </div>
+                <div class="hc-title font-display">@h.Challenge.Title</div>
+                <div class="hc-date font-mono text-dim">
+                    @h.Challenge.StartsAt.ToLocalTime().ToString("dd.MM.yy") –
+                    @h.Challenge.EndsAt.ToLocalTime().ToString("dd.MM.yy")
+                </div>
+                @if (!string.IsNullOrEmpty(h.Challenge.Description))
+                {
+                    <div class="font-mono text-dim" style="font-size:.7rem;margin-top:.3rem">
+                        @h.Challenge.Description
+                    </div>
+                }
+            </div>
+            @if (h.Winner != null)
+            {
+                <div class="hc-winner">
+                    <span class="hc-winner-crown">👑</span>
+                    <span class="font-display hc-winner-name">@h.Winner.ClassroomName</span>
+                    <span class="font-mono text-dim hc-winner-score">@h.Winner.Score pts</span>
+                </div>
+            }
+        </div>
+
+        @if (h.Results.Any())
+        {
+            <div class="leaderboard" style="margin-bottom:2rem">
+                @foreach (var r in h.Results)
+                {
+                    var medal = r.Position switch { 1 => "🥇", 2 => "🥈", 3 => "🥉", _ => $"#{r.Position}" };
+                    var sc = r.Score >= 80 ? "#00ff88" : r.Score >= 60 ? "#00e5ff" : r.Score >= 40 ? "#ff8c00" : "#ff2d55";
+                    <div class="leader-row @(r.Position == 1 ? "leader-row-first" : "")">
+                        <div class="lr-rank font-display">@medal</div>
+                        <div class="lr-name-group">
+                            <span class="lr-name font-display">@r.ClassroomName</span>
+                        </div>
+                        <div class="lr-bar-wrap">
+                            <div class="lr-bar" style="width:@r.Score%;background:linear-gradient(90deg,@(sc)88,@sc)">
+                                <span class="lr-bar-label font-mono">@r.Score pts</span>
+                            </div>
+                        </div>
+                        <div class="lr-score-wrap">
+                            <span class="lr-score font-display" style="color:@sc">@r.Score</span>
+                            <span class="font-mono text-dim">/ 100</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+}
+
+@functions {
+    string MetricIcon(CARE.Models.ChallengeMetric m) => m switch
+    {
+        CARE.Models.ChallengeMetric.BestAir => "🌫",
+        CARE.Models.ChallengeMetric.Quietest => "🔇",
+        CARE.Models.ChallengeMetric.Brightest => "💡",
+        CARE.Models.ChallengeMetric.BestTemp => "🌡",
+        CARE.Models.ChallengeMetric.BestHumidity => "💧",
+        _ => "⚔"
+    };
+    string MetricLabel(CARE.Models.ChallengeMetric m) => m switch
+    {
+        CARE.Models.ChallengeMetric.BestAir => "BESTE LUFT",
+        CARE.Models.ChallengeMetric.Quietest => "LEISESTE KLASSE",
+        CARE.Models.ChallengeMetric.Brightest => "HELLSTE KLASSE",
+        CARE.Models.ChallengeMetric.BestTemp => "BESTE TEMPERATUR",
+        CARE.Models.ChallengeMetric.BestHumidity => "BESTE LUFTFEUCHTE",
+        _ => "GESAMT-SCORE"
+    };
+}

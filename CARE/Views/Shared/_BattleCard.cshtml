@@ -1,0 +1,79 @@
+@model ClassroomLiveVm
+@using Microsoft.AspNetCore.Html
+@{
+    var medal = Model.Position switch { 1 => "🥇", 2 => "🥈", 3 => "🥉", _ => $"#{Model.Position}" };
+    var scoreColor = Model.TotalScore >= 80 ? "#00ff88"
+                   : Model.TotalScore >= 60 ? "#00e5ff"
+                   : Model.TotalScore >= 40 ? "#ff8c00"
+                   : "#ff2d55";
+}
+
+<a href="/Classroom/Detail/@Model.Name" class="battle-card-link">
+  <div class="battle-card @(!Model.Online ? "card-offline" : "")"
+       data-name="@Model.Name"
+       style="--rank-color:@Model.RankColor; border-color:@(Model.RankColor)22">
+
+    @if (Model.Position == 1 && Model.Online)
+    {
+      <div class="card-top-glow"></div>
+    }
+
+    <div class="card-header">
+      <div class="card-title-group">
+        <span class="card-medal">@medal</span>
+        <span class="card-name font-display">@Model.Name</span>
+      </div>
+      <div class="card-badges">
+        <span class="badge-online font-mono @(Model.Online ? "online" : "offline")">
+          @(Model.Online ? "● LIVE" : "○ OFFLINE")
+        </span>
+        <span class="badge-rank font-mono" style="color:@Model.RankColor; border-color:@(Model.RankColor)44">
+          @Model.RankEmoji @Model.RankLabel
+        </span>
+      </div>
+      <div class="card-score-ring"
+           style="background:conic-gradient(@scoreColor @(Model.TotalScore)%, #1e1e35 0%)">
+        <div class="card-score-inner">
+          <span class="card-score-num font-display" style="color:@scoreColor">@Model.TotalScore</span>
+          <span class="card-score-unit font-mono">pts</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sensor grid -->
+    <div class="sensor-grid">
+      @Html.Raw(SensorCell("🌫", "CO₂",  Model.Eco2.ToString("F0"),     "ppm",  Model.ScoreEco2))
+      @Html.Raw(SensorCell("💡", "LIGHT", Model.Lux.ToString("F0"),      "lux",  Model.ScoreLux))
+      @Html.Raw(SensorCell("🌡", "TEMP",  Model.Temp.ToString("F1"),     "°C",   Model.ScoreTemp))
+      @Html.Raw(SensorCell("💧", "HUM",   Model.Humidity.ToString("F0"), "%",    Model.ScoreHumidity))
+      @Html.Raw(SensorCell("🔊", "NOISE", Model.Db.ToString("F0"),       "dB",   Model.ScoreDb))
+    </div>
+
+    <!-- Score bar -->
+    <div class="score-bar-wrap">
+      <div class="score-bar" style="width:@Model.TotalScore%;background:linear-gradient(90deg,@(scoreColor)88,@scoreColor)"></div>
+    </div>
+
+    <div class="card-footer font-mono">
+      <span class="text-dim">@Model.LastSeenAgo</span>
+      <a href="/Classroom/Edit/@Model.Name" class="card-edit-btn font-mono" onclick="event.stopPropagation()">✏ EDIT</a>
+      <span class="card-view-hint">VIEW DETAILS →</span>
+    </div>
+  </div>
+</a>
+
+@functions {
+  string SensorCell(string icon, string label, string val, string unit, int score)
+  {
+    var color = score >= 80 ? "#00ff88"
+              : score >= 55 ? "#00e5ff"
+              : score >= 35 ? "#ff8c00" : "#ff2d55";
+    return $@"<div class='sensor-cell' style='--score-color:{color};border-bottom-color:{color}'>
+      <span class='sensor-icon'>{icon}</span>
+      <span class='sensor-label font-mono'>{label}</span>
+      <span class='sensor-val font-display' style='color:{color}'>{val}</span>
+      <span class='sensor-unit font-mono'>{unit}</span>
+      <div class='sensor-bar'><div class='sensor-bar-fill' style='width:{score}%;background:{color}'></div></div>
+    </div>";
+  }
+}

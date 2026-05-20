@@ -1,0 +1,34 @@
+﻿@{
+    ViewData["Title"] = "Admin Login";
+    Layout = "_Layout";
+}
+
+<div class="login-wrap">
+    <div class="login-box">
+        <div class="login-header">
+            <div class="font-display login-title">ADMIN <span class="accent-cyan">LOGIN</span></div>
+            <div class="font-mono text-dim" style="font-size:.7rem;letter-spacing:2px">CARE BATTLE SYSTEM</div>
+        </div>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="login-error font-mono">⚠ @ViewBag.Error</div>
+        }
+
+        <form method="post" action="/Admin/Login" class="login-form">
+            <div class="form-group">
+                <label class="form-label font-mono">E-MAIL</label>
+                <input type="email" name="email" class="form-input font-mono"
+                       placeholder="admin@care.local" required />
+            </div>
+            <div class="form-group">
+                <label class="form-label font-mono">PASSWORT</label>
+                <input type="password" name="password" class="form-input font-mono"
+                       placeholder="••••••••" required />
+            </div>
+            <button type="submit" class="btn-primary font-display" style="width:100%">
+                ⚡ EINLOGGEN
+            </button>
+        </form>
+    </div>
+</div>

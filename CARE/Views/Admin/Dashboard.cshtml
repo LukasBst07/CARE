@@ -1,0 +1,63 @@
+﻿@model List<CARE.Models.Challenge>
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    var now = DateTime.UtcNow;
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">ADMIN <span class="accent-cyan">DASHBOARD</span></h1>
+        <p class="page-sub font-mono">Challenge-Verwaltung</p>
+    </div>
+    <div style="display:flex;gap:.75rem;align-items:center">
+        <a href="/Admin/Challenge/Create" class="btn-primary font-display"
+           style="font-size:.75rem">+ NEUE CHALLENGE</a>
+        <form method="post" action="/Admin/Logout">
+            <button type="submit" class="btn-secondary font-mono"
+                    style="font-size:.7rem">
+                LOGOUT
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="leaderboard">
+    @foreach (var c in Model)
+    {
+        var isActive = c.IsActive;
+        var isOver = c.IsOver;
+        var isPending = now < c.StartsAt;
+        var statusTxt = isActive ? "● AKTIV" : isPending ? "◷ GEPLANT" : "✓ BEENDET";
+        var statusColor = isActive ? "#00ff88" : isPending ? "#00e5ff" : "#555";
+
+        <div class="leader-row"
+             style="display:grid;grid-template-columns:1fr auto auto auto;gap:1rem">
+            <div>
+                <div class="font-display" style="font-size:1rem;letter-spacing:2px">@c.Title</div>
+                <div class="font-mono text-dim" style="font-size:.65rem">
+                    @c.Metric · @c.StartsAt.ToLocalTime().ToString("dd.MM.yy HH:mm")
+                    → @c.EndsAt.ToLocalTime().ToString("dd.MM.yy HH:mm")
+                </div>
+            </div>
+            <span class="font-mono" style="color:@statusColor;font-size:.7rem;align-self:center">
+                @statusTxt
+            </span>
+            <a href="/Admin/Challenge/Edit/@c.Id" class="btn-secondary font-mono"
+               style="font-size:.65rem;padding:.3rem .7rem;align-self:center">EDIT</a>
+            <form method="post" action="/Admin/Challenge/Delete/@c.Id"
+                  style="align-self:center"
+                  onsubmit="return confirm('Challenge löschen?')">
+                <button type="submit" class="btn-secondary font-mono"
+                        style="font-size:.65rem;padding:.3rem .7rem;color:var(--red);border-color:var(--red)">
+                    DEL
+                </button>
+            </form>
+        </div>
+    }
+    @if (!Model.Any())
+    {
+        <div class="empty-state" style="padding:3rem">
+            <div class="font-mono text-dim">Keine Challenges vorhanden.</div>
+        </div>
+    }
+</div>

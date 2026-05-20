@@ -1,0 +1,184 @@
+@model ClassDetailVm
+@{
+    ViewData["Title"] = Model.ClassName;
+    var live = Model.Live;
+    var rankColor  = live?.RankColor ?? "#00e5ff";
+    var scoreColor = live != null
+        ? (live.TotalScore >= 80 ? "#00ff88" : live.TotalScore >= 60 ? "#00e5ff" : live.TotalScore >= 40 ? "#ff8c00" : "#ff2d55")
+        : "#555";
+}
+
+<a href="/" class="back-link font-mono">← BACK TO BATTLE</a>
+
+<!-- Hero -->
+<div class="detail-hero" style="--rank-color:@rankColor">
+  <div class="detail-hero-glow"></div>
+  <div class="detail-hero-inner">
+    <div class="detail-left">
+      <div class="detail-badges">
+        <span class="badge-online font-mono @(live?.Online == true ? "online" : "offline")">
+          @(live?.Online == true ? "● LIVE" : "○ OFFLINE")
+        </span>
+        @if (live != null) {
+          <span class="font-mono text-dim">RANK #@live.Position</span>
+          <span class="font-mono text-dim">@live.LastSeenAgo</span>
+        }
+      </div>
+      <div class="detail-classname font-display" style="color:@rankColor">@Model.ClassName</div>
+      @if (live != null)
+      {
+        <div class="rank-pill font-mono" style="color:@rankColor;border-color:@(rankColor)44;background:@(rankColor)11">
+          @live.RankEmoji @live.RankLabel CLASS
+        </div>
+      }
+      <a href="/Classroom/Edit/@Model.ClassName" class="btn-edit-small font-mono" style="margin-top:.8rem;display:inline-flex;align-items:center;gap:.4rem">✏ WERTE BEARBEITEN</a>
+    </div>
+    <div class="detail-score-block">
+      @if (live != null)
+      {
+        <div class="detail-score font-display" style="color:@scoreColor;text-shadow:0 0 60px @(scoreColor)60">@live.TotalScore</div>
+      }
+      else { <div class="detail-score font-display" style="color:#333">–</div> }
+      <div class="font-mono text-dim">TOTAL SCORE / 100</div>
+    </div>
+  </div>
+</div>
+
+<div class="detail-grid">
+
+  <!-- Score Breakdown -->
+  <div class="detail-panel">
+    <h2 class="panel-title font-display">SCORE BREAKDOWN</h2>
+    @if (live != null)
+    {
+      @Html.Raw(ScoreRow("🌫", "CO₂",         live.ScoreEco2,     live.Eco2,     "ppm", "400–700 ppm", Model.AvgEco2))
+      @Html.Raw(ScoreRow("🌡", "TEMPERATURE",  live.ScoreTemp,     live.Temp,     "°C",  "20–22 °C",    Model.AvgTemp))
+      @Html.Raw(ScoreRow("💧", "HUMIDITY",     live.ScoreHumidity, live.Humidity, "%",   "40–60 %",     Model.AvgHumidity))
+      @Html.Raw(ScoreRow("🔊", "NOISE",        live.ScoreDb,       live.Db,       "dB",  "< 40 dB",     Model.AvgDb))
+      @Html.Raw(ScoreRow("💡", "LIGHT",        live.ScoreLux,      live.Lux,      "lux", "300–750 lux", Model.AvgLux))
+      <div class="breakdown-total">
+        <span class="font-display text-dim">TOTAL</span>
+        <span class="font-display breakdown-total-num" style="color:@scoreColor">@live.TotalScore</span>
+      </div>
+    }
+    else { <p class="font-mono text-dim" style="padding:2rem;text-align:center">No live data yet</p> }
+  </div>
+
+  <!-- Live Values -->
+  <div class="detail-panel">
+    <h2 class="panel-title font-display">LIVE SENSOR VALUES</h2>
+    @if (live != null)
+    {
+      @Html.Raw(BigSensor("🌫", "CO₂",         live.Eco2.ToString("F0"),     "ppm",  live.ScoreEco2,     "400–700 ppm"))
+      @Html.Raw(BigSensor("🌡", "TEMPERATURE", live.Temp.ToString("F1"),     "°C",   live.ScoreTemp,     "20–22 °C"))
+      @Html.Raw(BigSensor("💧", "HUMIDITY",    live.Humidity.ToString("F0"), "%",    live.ScoreHumidity, "40–60 %"))
+      @Html.Raw(BigSensor("🔊", "NOISE",       live.Db.ToString("F0"),       "dB",   live.ScoreDb,       "< 40 dB"))
+      @Html.Raw(BigSensor("💡", "LIGHT",       live.Lux.ToString("F0"),      "lux",  live.ScoreLux,      "300–750 lux"))
+    }
+  </div>
+</div>
+
+<!-- vs Average -->
+@if (live != null && Model.AvgScore > 0)
+{
+  <div class="detail-panel" style="margin-top:1.5rem">
+    <h2 class="panel-title font-display">VS CLASS AVERAGE</h2>
+    <div class="vs-grid">
+      @Html.Raw(VsRow("SCORE",    live.TotalScore,       (int)Model.AvgScore,    "pts"))
+      @Html.Raw(VsRow("CO₂",      (int)live.Eco2,        (int)Model.AvgEco2,     "ppm",  lowerBetter: true))
+      @Html.Raw(VsRow("TEMP",     (int)(live.Temp*10),   (int)(Model.AvgTemp*10),"°C"))
+      @Html.Raw(VsRow("NOISE",    (int)live.Db,          (int)Model.AvgDb,       "dB",   lowerBetter: true))
+      @Html.Raw(VsRow("HUMIDITY", (int)live.Humidity,    (int)Model.AvgHumidity, "%"))
+    </div>
+  </div>
+}
+
+<!-- History sparkline -->
+@if (Model.History.Any())
+{
+  <div class="detail-panel" style="margin-top:1.5rem">
+    <h2 class="panel-title font-display">SCORE HISTORY</h2>
+    @{
+      var scores = Model.History.Select(h => h.Score).ToList();
+      var minS = scores.Min(); var maxS = scores.Max();
+      var range = maxS - minS == 0 ? 1 : maxS - minS;
+      var pts = string.Join(" ", scores.Select((s,i) => {
+        double x = (double)i / (scores.Count - 1) * 100;
+        double y = 100 - ((double)(s - minS) / range * 90) - 5;
+        return $"{x:F1},{y:F1}";
+      }));
+      var lastScore = scores.Last();
+    }
+    <div class="sparkline-wrap">
+      <svg viewBox="0 0 100 100" class="sparkline" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#00e5ff" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#00e5ff" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <polygon points="0,100 @pts 100,100" fill="url(#sg)"/>
+        <polyline points="@pts" fill="none" stroke="#00e5ff" stroke-width="1.5"
+                  stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+      </svg>
+      <div class="sparkline-labels font-mono">
+        <span>oldest</span>
+        <span>latest · @lastScore pts</span>
+      </div>
+    </div>
+  </div>
+}
+
+@functions {
+  string ScoreRow(string icon, string label, int score, double rawVal, string unit, string ideal, double avg)
+  {
+    var color = score >= 80 ? "#00ff88" : score >= 55 ? "#00e5ff" : score >= 35 ? "#ff8c00" : "#ff2d55";
+    return $@"<div class='breakdown-row'>
+      <div class='br-left'>
+        <span>{icon}</span>
+        <span class='font-mono br-label'>{label}</span>
+        <span class='font-mono br-ideal text-dim'>ideal {ideal}</span>
+      </div>
+      <div class='br-right'>
+        <span class='font-mono text-dim'>{rawVal:F1} {unit}</span>
+        <span class='font-display br-score' style='color:{color}'>{score}</span>
+      </div>
+      <div class='br-bar-wrap'>
+        <div class='br-bar' style='width:{score}%;background:{color}'></div>
+      </div>
+    </div>";
+  }
+
+  string BigSensor(string icon, string label, string val, string unit, int score, string ideal)
+  {
+    var color = score >= 80 ? "#00ff88" : score >= 55 ? "#00e5ff" : score >= 35 ? "#ff8c00" : "#ff2d55";
+    return $@"<div class='big-sensor'>
+      <span class='bs-icon'>{icon}</span>
+      <div class='bs-data'>
+        <div class='bs-val-row'>
+          <span class='font-display bs-val' style='color:{color}'>{val}</span>
+          <span class='font-mono bs-unit text-dim'>{unit}</span>
+        </div>
+        <div class='font-mono bs-label text-dim'>{label} · ideal {ideal}</div>
+      </div>
+      <div class='bs-score-wrap'>
+        <span class='font-display bs-score' style='color:{color}'>{score}</span>
+        <span class='font-mono text-dim'>/ 100</span>
+      </div>
+    </div>";
+  }
+
+  string VsRow(string label, int mine, int avg, string unit, bool lowerBetter = false)
+  {
+    var better  = lowerBetter ? mine < avg : mine > avg;
+    var diff    = mine - avg;
+    var diffStr = diff >= 0 ? $"+{diff}" : $"{diff}";
+    var color   = better ? "#00ff88" : diff == 0 ? "#888" : "#ff2d55";
+    return $@"<div class='vs-row'>
+      <span class='font-mono vs-label text-dim'>{label}</span>
+      <span class='font-display vs-mine' style='color:{color}'>{mine}{unit}</span>
+      <span class='font-mono vs-diff' style='color:{color}'>{diffStr}</span>
+      <span class='font-mono vs-avg text-dim'>avg {avg}{unit}</span>
+    </div>";
+  }
+}

@@ -1,0 +1,137 @@
+﻿@model CARE.ViewModels.ChallengeListVm
+@{
+    ViewData["Title"] = "Challenges";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">CLASS <span class="accent-cyan">CHALLENGES</span></h1>
+        <p class="page-sub font-mono">Aktive Wettbewerbe · Historie · Hall of Fame</p>
+    </div>
+</div>
+
+@if (Model.Active.Any())
+{
+    <div class="section-divider">
+        <span class="dot-live"></span>
+        <span class="font-mono text-dim">AKTIVE CHALLENGES</span>
+        <div class="divider-line"></div>
+    </div>
+    <div class="challenge-grid">
+        @foreach (var c in Model.Active)
+        {
+            <div class="challenge-card active-challenge">
+                <div class="challenge-card-glow"></div>
+                <div class="ch-metric font-mono">@MetricIcon(c.Metric) @MetricLabel(c.Metric)</div>
+                <div class="ch-title font-display">@c.Title</div>
+                @if (!string.IsNullOrEmpty(c.Description))
+                {
+                    <div class="ch-desc font-mono">@c.Description</div>
+                }
+                <div class="ch-timer font-mono" data-ends="@c.EndsAt.ToString("o")">⏱ Läuft noch…</div>
+                <div class="ch-dates font-mono text-dim">
+                    @c.StartsAt.ToLocalTime().ToString("dd.MM.yy") – @c.EndsAt.ToLocalTime().ToString("dd.MM.yy HH:mm")
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (Model.Upcoming.Any())
+{
+    <div class="section-divider" style="margin-top:2rem">
+        <span style="color:var(--cyan)">◷</span>
+        <span class="font-mono text-dim">GEPLANTE CHALLENGES</span>
+        <div class="divider-line"></div>
+    </div>
+    <div class="challenge-grid">
+        @foreach (var c in Model.Upcoming)
+        {
+            <div class="challenge-card upcoming-challenge">
+                <div class="ch-metric font-mono">@MetricIcon(c.Metric) @MetricLabel(c.Metric)</div>
+                <div class="ch-title font-display">@c.Title</div>
+                <div class="ch-dates font-mono text-dim">
+                    Startet: @c.StartsAt.ToLocalTime().ToString("dd.MM.yy HH:mm")
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (Model.Past.Any())
+{
+    <div class="section-divider" style="margin-top:2.5rem">
+        <span>🏆</span>
+        <span class="font-mono text-dim">CHALLENGE HISTORY · HALL OF FAME</span>
+        <div class="divider-line"></div>
+    </div>
+    @foreach (var h in Model.Past)
+    {
+        <a href="/Challenges/@h.Challenge.Id" class="history-card">
+            <div class="hc-left">
+                <div class="hc-metric font-mono text-dim">@MetricIcon(h.Challenge.Metric) @MetricLabel(h.Challenge.Metric)</div>
+                <div class="hc-title font-display">@h.Challenge.Title</div>
+                <div class="hc-date font-mono text-dim">
+                    @h.Challenge.StartsAt.ToLocalTime().ToString("dd.MM.yy") – @h.Challenge.EndsAt.ToLocalTime().ToString("dd.MM.yy")
+                </div>
+            </div>
+            @if (h.Winner != null)
+            {
+                <div class="hc-winner">
+                    <span class="hc-winner-crown">👑</span>
+                    <span class="font-display hc-winner-name">@h.Winner.ClassroomName</span>
+                    <span class="font-mono text-dim hc-winner-score">@h.Winner.Score pts</span>
+                </div>
+            }
+            <div class="hc-arrow font-mono text-dim">→</div>
+        </a>
+    }
+}
+
+@if (!Model.Active.Any() && !Model.Past.Any() && !Model.Upcoming.Any())
+{
+    <div class="empty-state">
+        <div class="empty-icon">🏆</div>
+        <p class="font-display">KEINE CHALLENGES</p>
+        <p class="font-mono text-dim">Der Admin kann Challenges erstellen.</p>
+    </div>
+}
+
+@functions {
+    string MetricIcon(CARE.Models.ChallengeMetric m) => m switch
+    {
+        CARE.Models.ChallengeMetric.BestAir => "🌫",
+        CARE.Models.ChallengeMetric.Quietest => "🔇",
+        CARE.Models.ChallengeMetric.Brightest => "💡",
+        CARE.Models.ChallengeMetric.BestTemp => "🌡",
+        CARE.Models.ChallengeMetric.BestHumidity => "💧",
+        _ => "⚔"
+    };
+    string MetricLabel(CARE.Models.ChallengeMetric m) => m switch
+    {
+        CARE.Models.ChallengeMetric.BestAir => "BESTE LUFT",
+        CARE.Models.ChallengeMetric.Quietest => "LEISESTE KLASSE",
+        CARE.Models.ChallengeMetric.Brightest => "HELLSTE KLASSE",
+        CARE.Models.ChallengeMetric.BestTemp => "BESTE TEMPERATUR",
+        CARE.Models.ChallengeMetric.BestHumidity => "BESTE LUFTFEUCHTE",
+        _ => "GESAMT-SCORE"
+    };
+}
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.ch-timer[data-ends]').forEach(el => {
+          const end = new Date(el.dataset.ends);
+          function update() {
+            const diff = end - Date.now();
+            if (diff <= 0) { el.textContent = '✓ BEENDET'; return; }
+            const d = Math.floor(diff / 86400000);
+            const h = Math.floor((diff % 86400000) / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            el.textContent = `⏱ Noch ${d > 0 ? d+'T ' : ''}${h}h ${m}m`;
+          }
+          update();
+          setInterval(update, 30000);
+        });
+    </script>
+}

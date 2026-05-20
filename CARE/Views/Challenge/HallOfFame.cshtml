@@ -1,0 +1,62 @@
+﻿@model List<CARE.ViewModels.HallOfFameEntryVm>
+@{
+    ViewData["Title"] = "Hall of Fame";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">HALL OF <span class="accent-cyan">FAME</span></h1>
+        <p class="page-sub font-mono">Bestes Klassen-Ranking aller Zeiten · Alle Challenges</p>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-state">
+        <div class="empty-icon">🏆</div>
+        <p class="font-display">NOCH KEINE DATEN</p>
+        <p class="font-mono text-dim">Wird nach Ablauf der ersten Challenge befüllt.</p>
+    </div>
+}
+else
+{
+    <div class="leaderboard">
+        @for (int i = 0; i < Model.Count; i++)
+        {
+            var h = Model[i];
+            var rank = i + 1;
+            var medal = rank switch { 1 => "🥇", 2 => "🥈", 3 => "🥉", _ => $"#{rank}" };
+            var color = rank == 1 ? "#ffd700" : rank == 2 ? "#c0c0c0" : rank == 3 ? "#cd7f32" : "#00e5ff";
+
+            <div class="leader-row @(rank == 1 ? "leader-row-first" : "")"
+                 style="@(rank == 1 ? $"background:{color}0a;border-color:{color}33" : "")">
+
+                <div class="lr-rank font-display">@medal</div>
+
+                <div class="lr-name-group">
+                    <span class="lr-name font-display" style="color:@color">@h.ClassroomName</span>
+                    <span class="font-mono text-dim" style="font-size:.6rem">
+                        @h.Wins Siege · @h.Podiums Podien · @h.Participations Teilnahmen
+                    </span>
+                </div>
+
+                <div class="lr-bar-wrap">
+                    <div class="lr-bar" style="width:@((int)(h.AvgScore))%;background:linear-gradient(90deg,@(color)88,@color)">
+                        <span class="lr-bar-label font-mono">⌀ @h.AvgScore pts</span>
+                    </div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;align-items:center;gap:.1rem;flex-shrink:0">
+                    <span class="font-display" style="font-size:1.5rem;color:@color">@h.Wins</span>
+                    <span class="font-mono text-dim" style="font-size:.55rem">SIEGE</span>
+                </div>
+
+                <div style="display:flex;flex-direction:column;align-items:center;gap:.1rem;flex-shrink:0">
+                    <span class="font-display" style="font-size:1.2rem;color:var(--text)">@h.BestScore</span>
+                    <span class="font-mono text-dim" style="font-size:.55rem">BEST PTS</span>
+                </div>
+
+            </div>
+        }
+    </div>
+}

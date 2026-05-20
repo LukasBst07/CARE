@@ -1,0 +1,78 @@
+@model RankingPageVm
+@{
+    ViewData["Title"] = "RANKING";
+}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">CLASS <span class="accent-cyan">RANKING</span></h1>
+    <p class="page-sub font-mono">LIVE LEADERBOARD · ALL CATEGORIES</p>
+  </div>
+</div>
+
+<!-- Overall leaderboard -->
+<div class="section-divider">
+  <span>⚔</span>
+  <span class="font-mono text-dim">OVERALL SCORE</span>
+  <div class="divider-line"></div>
+</div>
+
+<div class="leaderboard" id="overallBoard">
+  @foreach (var (cls, i) in Model.Overall.Select((c,i) => (c, i)))
+  {
+    @await Html.PartialAsync("_LeaderRow", (cls, i + 1))
+  }
+</div>
+
+<!-- Category mini-boards -->
+<div class="category-grid">
+  @Html.Raw(CategoryBoard("🌫 BEST AIR",       Model.BestAir,       "ScoreEco2",     "CO₂ score"))
+  @Html.Raw(CategoryBoard("🔇 QUIETEST",       Model.Quietest,      "ScoreDb",       "Noise score"))
+  @Html.Raw(CategoryBoard("💡 BRIGHTEST",      Model.Brightest,     "ScoreLux",      "Light score"))
+  @Html.Raw(CategoryBoard("🌡 BEST TEMP",      Model.BestTemp,      "ScoreTemp",     "Temp score"))
+  @Html.Raw(CategoryBoard("💧 BEST HUMIDITY",  Model.BestHumidity,  "ScoreHumidity", "Humidity score"))
+</div>
+
+@functions {
+  string CategoryBoard(string title, IReadOnlyList<ClassroomLiveVm> list, string scoreProp, string desc)
+  {
+    var sb = new System.Text.StringBuilder();
+    sb.Append($"<div class='cat-board'><div class='cat-title font-display'>{title}</div><div class='cat-desc font-mono'>{desc}</div><div class='cat-rows'>");
+
+    for (int i = 0; i < Math.Min(list.Count, 4); i++)
+    {
+      var cls = list[i];
+      var medal = i switch { 0 => "🥇", 1 => "🥈", 2 => "🥉", _ => $"#{i+1}" };
+      var dotColor = cls.Online ? "#00ff88" : "#ffffff22";
+      var score = scoreProp switch {
+        "ScoreEco2"     => cls.ScoreEco2,
+        "ScoreDb"       => cls.ScoreDb,
+        "ScoreLux"      => cls.ScoreLux,
+        "ScoreTemp"     => cls.ScoreTemp,
+        "ScoreHumidity" => cls.ScoreHumidity,
+        _ => cls.TotalScore
+      };
+      sb.Append($@"<a href='/Classroom/Detail/{cls.Name}' class='cat-row'>
+        <span class='cat-medal'>{medal}</span>
+        <span class='cat-name font-display'>{cls.Name}</span>
+        <div class='cat-bar-wrap'><div class='cat-bar' style='width:{score}%'></div></div>
+        <span class='cat-score font-mono'>{score}</span>
+        <span class='cat-dot' style='background:{dotColor}'></span>
+      </a>");
+    }
+
+    if (list.Count == 0)
+      sb.Append("<div class='font-mono text-dim' style='padding:1rem;text-align:center'>NO DATA</div>");
+
+    sb.Append("</div></div>");
+    return sb.ToString();
+  }
+}
+
+@section Scripts {
+<script>
+careSignalR.on('RankingUpdate', function(classrooms) {
+  updateLeaderboard(classrooms);
+});
+</script>
+}

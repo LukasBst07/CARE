@@ -1,0 +1,76 @@
+﻿@model CARE.ViewModels.ChallengeFormVm
+@{
+    bool isEdit = Model.Id != 0;
+    ViewData["Title"] = isEdit ? "Challenge bearbeiten" : "Neue Challenge";
+    string action = isEdit ? $"/Admin/Challenge/Edit/{Model.Id}" : "/Admin/Challenge/Create";
+
+    var metricOptions = new System.Text.StringBuilder();
+    var metricMap = new Dictionary<CARE.Models.ChallengeMetric, string>
+    {
+        { CARE.Models.ChallengeMetric.OverallScore,  "⚔ Gesamt-Score"           },
+        { CARE.Models.ChallengeMetric.BestAir,       "🌫 Beste Luftqualität"     },
+        { CARE.Models.ChallengeMetric.Quietest,      "🔇 Leiseste Klasse"        },
+        { CARE.Models.ChallengeMetric.Brightest,     "💡 Hellste Klasse"         },
+        { CARE.Models.ChallengeMetric.BestTemp,      "🌡 Beste Temperatur"       },
+        { CARE.Models.ChallengeMetric.BestHumidity,  "💧 Beste Luftfeuchtigkeit" },
+    };
+    foreach (var kv in metricMap)
+    {
+        var sel = Model.Metric == kv.Key ? " selected" : "";
+        metricOptions.Append($"<option value=\"{kv.Key}\"{sel}>{kv.Value}</option>");
+    }
+
+    var startsAtStr = Model.StartsAt.ToString("yyyy-MM-ddTHH:mm");
+    var endsAtStr = Model.EndsAt.ToString("yyyy-MM-ddTHH:mm");
+}
+
+<a href="/Admin/Dashboard" class="back-link font-mono">← ZURÜCK</a>
+
+<div class="page-header">
+    <h1 class="page-title">@(isEdit ? "EDIT" : "NEUE") <span class="accent-cyan">CHALLENGE</span></h1>
+</div>
+
+<div class="edit-wrap">
+    <form method="post" action="@action" class="sensor-form">
+
+        <div class="form-group">
+            <label class="form-label font-mono">TITEL</label>
+            <input type="text" name="Title" value="@Model.Title"
+                   class="form-input" placeholder="z.B. Woche der besten Luft"
+                   required maxlength="120" />
+        </div>
+
+        <div class="form-group">
+            <label class="form-label font-mono">BESCHREIBUNG (optional)</label>
+            <textarea name="Description" class="form-input" rows="2"
+                      maxlength="500">@Model.Description</textarea>
+        </div>
+
+        <div class="sensor-form-grid">
+            <div class="sensor-form-card">
+                <label class="form-label font-mono">METRIK</label>
+                <select name="Metric" class="form-input font-mono">
+                    @Html.Raw(metricOptions.ToString())
+                </select>
+            </div>
+            <div class="sensor-form-card">
+                <label class="form-label font-mono">STARTDATUM</label>
+                <input type="datetime-local" name="StartsAt" value="@startsAtStr"
+                       class="form-input font-mono" required />
+            </div>
+            <div class="sensor-form-card">
+                <label class="form-label font-mono">ENDDATUM</label>
+                <input type="datetime-local" name="EndsAt" value="@endsAtStr"
+                       class="form-input font-mono" required />
+                <span class="form-hint font-mono">Gewinner wird automatisch gespeichert</span>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="/Admin/Dashboard" class="btn-secondary font-mono">ABBRECHEN</a>
+            <button type="submit" class="btn-primary font-display">
+                @(isEdit ? "💾 SPEICHERN" : "⚡ ERSTELLEN")
+            </button>
+        </div>
+    </form>
+</div>
