@@ -14,7 +14,7 @@ builder.Services.AddDbContext<AppDbContext>(o =>
     o.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 builder.Services.AddIdentity<AppUser, IdentityRole>(opts =>
 {
-    opts.Password.RequireDigit = true;
+    opts.Password.RequireDigit = true; 
     opts.Password.RequiredLength = 8;
     opts.Password.RequireNonAlphanumeric = false;
     opts.Password.RequireUppercase = false;
